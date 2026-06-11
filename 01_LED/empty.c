@@ -37,9 +37,9 @@ int main(void)
     SYSCFG_DL_init();
 
     while (1) {
-        delay_cycles(8000000);
+        delay_cycles(32000000);
         DL_GPIO_clearPins(LED_PORT, LED_LED0_PIN);
-        delay_cycles(8000000);
+        delay_cycles(32000000);
         DL_GPIO_setPins(LED_PORT, LED_LED0_PIN);
     }
 }

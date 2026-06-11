@@ -1,0 +1,31 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const GPIO   = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const LED    = GPIO.addInstance();
+const TIMER  = scripting.addModule("/ti/driverlib/TIMER", {}, false);
+const TIMER1 = TIMER.addInstance();
+const SYSCTL = scripting.addModule("/ti/driverlib/SYSCTL");
+
+LED.$name                         = "LED1";
+LED.associatedPins[0].$name       = "PIN_22";
+LED.associatedPins[0].pin.$assign = "PB22";
+
+TIMER1.$name              = "TIMER_0";
+TIMER1.timerMode          = "PERIODIC";
+TIMER1.interrupts         = ["ZERO"];
+TIMER1.timerClkSrc        = "LFCLK";
+TIMER1.timerClkPrescale   = 33;
+TIMER1.timerPeriod        = "1000 ms";
+TIMER1.peripheral.$assign = "TIMG0";
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

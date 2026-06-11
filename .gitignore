@@ -14,3 +14,5 @@
 
 # Local editor/index caches
 **/.clangd/.cache/
+.syscfg-check/
+.compile-check/

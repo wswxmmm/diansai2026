@@ -1,0 +1,9 @@
+# 11_SPI
+
+Hardware SPI W25Q128 Flash demo.
+
+- SPI1 SCLK: PB9
+- SPI1 MOSI: PB8
+- SPI1 MISO: PB7
+- Software CS: PB17
+- UART0 TX/RX: PA10/PA11, 9600 baud

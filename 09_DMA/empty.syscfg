@@ -1,0 +1,42 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const UART   = scripting.addModule("/ti/driverlib/UART", {}, false);
+const UART1  = UART.addInstance();
+const ADC12  = scripting.addModule("/ti/driverlib/ADC12", {}, false);
+const ADC1   = ADC12.addInstance();
+const SYSCTL = scripting.addModule("/ti/driverlib/SYSCTL");
+
+UART1.$name                    = "UART_0";
+UART1.profile                  = "CONFIG_PROFILE_1";
+UART1.peripheral.$assign       = "UART0";
+UART1.targetBaudRate           = 9600;
+UART1.enableFIFO               = false;
+UART1.peripheral.rxPin.$assign = "PA11";
+UART1.peripheral.txPin.$assign = "PA10";
+
+ADC1.$name                          = "ADC_VOLTAGE";
+ADC1.repeatMode                     = true;
+ADC1.adcMem0chansel                 = "DL_ADC12_INPUT_CHAN_2";
+ADC1.sampleTime0                    = "125 us";
+ADC1.powerDownMode                  = "DL_ADC12_POWER_DOWN_MODE_MANUAL";
+ADC1.configureDMA                   = true;
+ADC1.enabledDMATriggers             = ["DL_ADC12_DMA_MEM0_RESULT_LOADED"];
+ADC1.peripheral.$assign             = "ADC0";
+ADC1.peripheral.adcPin2.$assign     = "PA25";
+ADC1.DMA_CHANNEL.$name              = "DMA_CH0";
+ADC1.DMA_CHANNEL.addressMode        = "f2b";
+ADC1.DMA_CHANNEL.srcLength          = "HALF_WORD";
+ADC1.DMA_CHANNEL.dstLength          = "HALF_WORD";
+ADC1.DMA_CHANNEL.peripheral.$assign = "DMA_CH0";
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

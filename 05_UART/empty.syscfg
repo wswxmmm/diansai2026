@@ -1,0 +1,26 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const UART   = scripting.addModule("/ti/driverlib/UART", {}, false);
+const UART1  = UART.addInstance();
+const SYSCTL = scripting.addModule("/ti/driverlib/SYSCTL");
+
+UART1.$name                      = "UART_0";
+UART1.profile                    = "CONFIG_PROFILE_1";
+UART1.peripheral.$assign         = "UART0";
+UART1.targetBaudRate             = 9600;
+UART1.enabledInterrupts          = ["RX"];
+UART1.enableFIFO                 = false;
+UART1.peripheral.rxPin.$assign   = "PA11";
+UART1.peripheral.txPin.$assign   = "PA10";
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";
