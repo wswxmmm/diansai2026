@@ -1,0 +1,16 @@
+# TI CCS build output
+**/Debug/
+**/Release/
+
+# Object and binary artifacts
+*.o
+*.obj
+*.out
+*.map
+*.elf
+*.hex
+*.bin
+*.d
+
+# Local editor/index caches
+**/.clangd/.cache/
