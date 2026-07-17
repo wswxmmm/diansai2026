@@ -15,18 +15,18 @@ static uint8_t g_oledBuffer[OLED_WIDTH * OLED_PAGE_COUNT];
 
 static bool OLED_I2C_Write(const uint8_t *data, uint8_t len)
 {
-    while (!(DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
+    while (!(DL_I2C_getControllerStatus(OLED_INST) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
     }
 
-    (void) DL_I2C_fillControllerTXFIFO(I2C_INST, (uint8_t *) data, len);
+    (void) DL_I2C_fillControllerTXFIFO(OLED_INST, (uint8_t *) data, len);
     DL_I2C_startControllerTransfer(
-        I2C_INST, OLED_I2C_ADDR, DL_I2C_CONTROLLER_DIRECTION_TX, len);
+        OLED_INST, OLED_I2C_ADDR, DL_I2C_CONTROLLER_DIRECTION_TX, len);
     delay_cycles(1000);
 
-    while (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_BUSY) {
+    while (DL_I2C_getControllerStatus(OLED_INST) & DL_I2C_CONTROLLER_STATUS_BUSY) {
     }
 
-    return (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) == 0U;
+    return (DL_I2C_getControllerStatus(OLED_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) == 0U;
 }
 
 static void OLED_WR_Byte(uint8_t data, uint8_t mode)

@@ -2,7 +2,8 @@
 
 MPU6050 DMP angle demo for the TMX MSPM0G3507 board.
 
-- Shared I2C bus: PA1 = SCL, PA0 = SDA
+- MPU6050 I2C0 bus: PA1 = SCL, PA0 = SDA
+- OLED I2C1 bus: PB2 = SCL, PB3 = SDA
 - MPU6050 address: 0x68 when AD0/ADDR is connected to GND
 - OLED address: 0x3C
 - Status LED: PB22

@@ -12,7 +12,7 @@ static int wait_i2c_idle(void)
 {
     volatile uint32_t timeout = I2C_TIMEOUT_LOOPS;
 
-    while (!(DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
+    while (!(DL_I2C_getControllerStatus(MPU6050_INST) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
         if (--timeout == 0U) {
             return -1;
         }
@@ -25,8 +25,8 @@ static int wait_i2c_not_busy(void)
 {
     volatile uint32_t timeout = I2C_TIMEOUT_LOOPS;
 
-    while (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_BUSY) {
-        if (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) {
+    while (DL_I2C_getControllerStatus(MPU6050_INST) & DL_I2C_CONTROLLER_STATUS_BUSY) {
+        if (DL_I2C_getControllerStatus(MPU6050_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) {
             return -2;
         }
         if (--timeout == 0U) {
@@ -53,17 +53,17 @@ int MPU_Write_Len(unsigned char addr, unsigned char reg, unsigned char len, unsi
         return -1;
     }
 
-    DL_I2C_transmitControllerData(I2C_INST, reg);
-    DL_I2C_startControllerTransfer(I2C_INST, addr, DL_I2C_CONTROLLER_DIRECTION_TX, (uint16_t) len + 1U);
+    DL_I2C_transmitControllerData(MPU6050_INST, reg);
+    DL_I2C_startControllerTransfer(MPU6050_INST, addr, DL_I2C_CONTROLLER_DIRECTION_TX, (uint16_t) len + 1U);
 
     for (i = 0; i < len; i++) {
         timeout = I2C_TIMEOUT_LOOPS;
-        while (DL_I2C_isControllerTXFIFOFull(I2C_INST)) {
+        while (DL_I2C_isControllerTXFIFOFull(MPU6050_INST)) {
             if (--timeout == 0U) {
                 return -2;
             }
         }
-        DL_I2C_transmitControllerData(I2C_INST, buf[i]);
+        DL_I2C_transmitControllerData(MPU6050_INST, buf[i]);
     }
 
     if (wait_i2c_not_busy() != 0) {
@@ -82,8 +82,8 @@ int MPU_Read_Len(unsigned char addr, unsigned char reg, unsigned char len, unsig
         return -1;
     }
 
-    DL_I2C_transmitControllerData(I2C_INST, reg);
-    DL_I2C_startControllerTransfer(I2C_INST, addr, DL_I2C_CONTROLLER_DIRECTION_TX, 1U);
+    DL_I2C_transmitControllerData(MPU6050_INST, reg);
+    DL_I2C_startControllerTransfer(MPU6050_INST, addr, DL_I2C_CONTROLLER_DIRECTION_TX, 1U);
 
     if (wait_i2c_not_busy() != 0) {
         return -2;
@@ -92,19 +92,19 @@ int MPU_Read_Len(unsigned char addr, unsigned char reg, unsigned char len, unsig
         return -3;
     }
 
-    DL_I2C_startControllerTransfer(I2C_INST, addr, DL_I2C_CONTROLLER_DIRECTION_RX, len);
+    DL_I2C_startControllerTransfer(MPU6050_INST, addr, DL_I2C_CONTROLLER_DIRECTION_RX, len);
 
     for (i = 0; i < len; i++) {
         timeout = I2C_TIMEOUT_LOOPS;
-        while (DL_I2C_isControllerRXFIFOEmpty(I2C_INST)) {
-            if (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) {
+        while (DL_I2C_isControllerRXFIFOEmpty(MPU6050_INST)) {
+            if (DL_I2C_getControllerStatus(MPU6050_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) {
                 return -4;
             }
             if (--timeout == 0U) {
                 return -5;
             }
         }
-        buf[i] = DL_I2C_receiveControllerData(I2C_INST);
+        buf[i] = DL_I2C_receiveControllerData(MPU6050_INST);
     }
 
     if (wait_i2c_not_busy() != 0) {
