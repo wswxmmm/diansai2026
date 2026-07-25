@@ -1,0 +1,35 @@
+/**
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const GPIO       = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const I2C        = scripting.addModule("/ti/driverlib/I2C", {}, false);
+const JY61PI2C   = GPIO.addInstance();
+const OLEDI2C    = I2C.addInstance();
+const SYSCTL     = scripting.addModule("/ti/driverlib/SYSCTL");
+
+OLEDI2C.$name                     = "I2C";
+OLEDI2C.basicEnableController     = true;
+OLEDI2C.basicControllerBusSpeed   = 400000;
+OLEDI2C.advAnalogGlitchFilter     = "DISABLED";
+OLEDI2C.peripheral.$assign        = "I2C1";
+OLEDI2C.peripheral.sclPin.$assign = "PB2";
+OLEDI2C.peripheral.sdaPin.$assign = "PB3";
+
+JY61PI2C.$name                          = "IIC_Software";
+JY61PI2C.associatedPins.create(2);
+JY61PI2C.associatedPins[0].$name        = "SCL";
+JY61PI2C.associatedPins[0].initialValue = "SET";
+JY61PI2C.associatedPins[0].pin.$assign  = "PA1";
+JY61PI2C.associatedPins[1].$name        = "SDA";
+JY61PI2C.associatedPins[1].initialValue = "SET";
+JY61PI2C.associatedPins[1].pin.$assign  = "PA0";
+
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

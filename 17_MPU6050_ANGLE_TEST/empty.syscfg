@@ -1,0 +1,46 @@
+/**
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const GPIO   = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const I2C    = scripting.addModule("/ti/driverlib/I2C", {}, false);
+const KEYS   = GPIO.addInstance();
+const I2C1   = I2C.addInstance();
+const MPUI2C = I2C.addInstance();
+const SYSCTL = scripting.addModule("/ti/driverlib/SYSCTL");
+
+KEYS.$name                              = "KEYS";
+KEYS.associatedPins.create(2);
+KEYS.associatedPins[0].$name            = "KEY1";
+KEYS.associatedPins[0].direction        = "INPUT";
+KEYS.associatedPins[0].internalResistor = "PULL_UP";
+KEYS.associatedPins[0].pin.$assign      = "PB17";
+KEYS.associatedPins[1].$name            = "KEY2";
+KEYS.associatedPins[1].direction        = "INPUT";
+KEYS.associatedPins[1].internalResistor = "PULL_UP";
+KEYS.associatedPins[1].pin.$assign      = "PB18";
+
+I2C1.$name                     = "I2C";
+I2C1.basicEnableController     = true;
+I2C1.basicControllerBusSpeed   = 400000;
+I2C1.advAnalogGlitchFilter     = "DISABLED";
+I2C1.peripheral.$assign        = "I2C1";
+I2C1.peripheral.sclPin.$assign = "PB2";
+I2C1.peripheral.sdaPin.$assign = "PB3";
+
+MPUI2C.$name                     = "MPU_I2C";
+MPUI2C.basicEnableController     = true;
+MPUI2C.basicControllerBusSpeed   = 100000;
+MPUI2C.advAnalogGlitchFilter     = "DISABLED";
+MPUI2C.peripheral.$assign        = "I2C0";
+MPUI2C.peripheral.sclPin.$assign = "PA1";
+MPUI2C.peripheral.sdaPin.$assign = "PA0";
+
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

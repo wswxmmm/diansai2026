@@ -1,0 +1,115 @@
+/**
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const GPIO   = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const I2C    = scripting.addModule("/ti/driverlib/I2C", {}, false);
+const PWM    = scripting.addModule("/ti/driverlib/PWM", {}, false);
+const TB6612 = GPIO.addInstance();
+const ENCODER_L = GPIO.addInstance();
+const ENCODER_R = GPIO.addInstance();
+const KEYS   = GPIO.addInstance();
+const I2C1   = I2C.addInstance();
+const PWM0   = PWM.addInstance();
+const SYSCTL = scripting.addModule("/ti/driverlib/SYSCTL");
+
+TB6612.$name                          = "TB6612";
+TB6612.associatedPins.create(4);
+TB6612.associatedPins[0].$name        = "AIN1";
+TB6612.associatedPins[0].initialValue = "SET";
+TB6612.associatedPins[0].pin.$assign  = "PA14";
+TB6612.associatedPins[1].$name        = "AIN2";
+TB6612.associatedPins[1].initialValue = "SET";
+TB6612.associatedPins[1].pin.$assign  = "PA15";
+TB6612.associatedPins[2].$name        = "BIN1";
+TB6612.associatedPins[2].initialValue = "SET";
+TB6612.associatedPins[2].pin.$assign  = "PA12";
+TB6612.associatedPins[3].$name        = "BIN2";
+TB6612.associatedPins[3].initialValue = "SET";
+TB6612.associatedPins[3].pin.$assign  = "PA13";
+
+ENCODER_L.$name                              = "ENCODER_L";
+ENCODER_L.associatedPins.create(2);
+ENCODER_L.associatedPins[0].$name            = "LA";
+ENCODER_L.associatedPins[0].direction        = "INPUT";
+ENCODER_L.associatedPins[0].internalResistor = "PULL_UP";
+ENCODER_L.associatedPins[0].interruptEn      = true;
+ENCODER_L.associatedPins[0].polarity         = "RISE";
+ENCODER_L.associatedPins[0].pin.$assign      = "PA7";
+ENCODER_L.associatedPins[1].$name            = "LB";
+ENCODER_L.associatedPins[1].direction        = "INPUT";
+ENCODER_L.associatedPins[1].internalResistor = "PULL_UP";
+ENCODER_L.associatedPins[1].interruptEn      = true;
+ENCODER_L.associatedPins[1].polarity         = "RISE";
+ENCODER_L.associatedPins[1].pin.$assign      = "PA8";
+
+ENCODER_R.$name                              = "ENCODER_R";
+ENCODER_R.associatedPins.create(2);
+ENCODER_R.associatedPins[0].$name            = "RA";
+ENCODER_R.associatedPins[0].direction        = "INPUT";
+ENCODER_R.associatedPins[0].internalResistor = "PULL_UP";
+ENCODER_R.associatedPins[0].interruptEn      = true;
+ENCODER_R.associatedPins[0].polarity         = "RISE";
+ENCODER_R.associatedPins[0].pin.$assign      = "PB6";
+ENCODER_R.associatedPins[1].$name            = "RB";
+ENCODER_R.associatedPins[1].direction        = "INPUT";
+ENCODER_R.associatedPins[1].internalResistor = "PULL_UP";
+ENCODER_R.associatedPins[1].interruptEn      = true;
+ENCODER_R.associatedPins[1].polarity         = "RISE";
+ENCODER_R.associatedPins[1].pin.$assign      = "PB8";
+
+KEYS.$name                              = "KEYS";
+KEYS.associatedPins.create(6);
+KEYS.associatedPins[0].$name            = "KEY1";
+KEYS.associatedPins[0].direction        = "INPUT";
+KEYS.associatedPins[0].internalResistor = "PULL_UP";
+KEYS.associatedPins[0].pin.$assign      = "PB17";
+KEYS.associatedPins[1].$name            = "KEY2";
+KEYS.associatedPins[1].direction        = "INPUT";
+KEYS.associatedPins[1].internalResistor = "PULL_UP";
+KEYS.associatedPins[1].pin.$assign      = "PB18";
+KEYS.associatedPins[2].$name            = "KEY3";
+KEYS.associatedPins[2].direction        = "INPUT";
+KEYS.associatedPins[2].internalResistor = "PULL_UP";
+KEYS.associatedPins[2].pin.$assign      = "PB19";
+KEYS.associatedPins[3].$name            = "KEY4";
+KEYS.associatedPins[3].direction        = "INPUT";
+KEYS.associatedPins[3].internalResistor = "PULL_UP";
+KEYS.associatedPins[3].pin.$assign      = "PB20";
+KEYS.associatedPins[4].$name            = "KEY5";
+KEYS.associatedPins[4].direction        = "INPUT";
+KEYS.associatedPins[4].internalResistor = "PULL_UP";
+KEYS.associatedPins[4].pin.$assign      = "PB24";
+KEYS.associatedPins[5].$name            = "KEY6";
+KEYS.associatedPins[5].direction        = "INPUT";
+KEYS.associatedPins[5].internalResistor = "PULL_UP";
+KEYS.associatedPins[5].pin.$assign      = "PB25";
+
+I2C1.$name                     = "I2C";
+I2C1.basicEnableController     = true;
+I2C1.basicControllerBusSpeed   = 400000;
+I2C1.advAnalogGlitchFilter     = "DISABLED";
+I2C1.peripheral.$assign        = "I2C1";
+I2C1.peripheral.sclPin.$assign = "PB2";
+I2C1.peripheral.sdaPin.$assign = "PB3";
+
+PWM0.$name                      = "PWM_0";
+PWM0.clockPrescale              = 256;
+PWM0.timerCount                 = 1000;
+PWM0.pwmMode                    = "EDGE_ALIGN";
+PWM0.peripheral.$assign         = "TIMA1";
+PWM0.peripheral.ccp0Pin.$assign = "PA17";
+PWM0.peripheral.ccp1Pin.$assign = "PA16";
+PWM0.PWM_CHANNEL_0.$name        = "C0";
+PWM0.PWM_CHANNEL_0.dutyCycle    = 0;
+PWM0.PWM_CHANNEL_1.$name        = "C1";
+PWM0.PWM_CHANNEL_1.dutyCycle    = 0;
+
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";
