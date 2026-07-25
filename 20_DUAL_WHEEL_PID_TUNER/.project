@@ -6,7 +6,7 @@
 	</projects>
 	<buildSpec>
 		<buildCommand>
-			<name>20_DUAL_WHEEL_PID_TUNER</name>
+			<name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name>
 			<arguments>
 			</arguments>
 		</buildCommand>

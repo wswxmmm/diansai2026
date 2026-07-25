@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #define SPEED_PID_GAIN_SCALE             (1000)
-#define SPEED_PID_EXPECTED_MAX_PPS       (5000)
-#define SPEED_PID_MIN_OUTPUT_PERMILLE    (80)
+#define SPEED_PID_EXPECTED_MAX_PPS       (120000)
+#define SPEED_PID_MIN_OUTPUT_PERMILLE    (0)
 #define SPEED_PID_MAX_OUTPUT_PERMILLE    (600)
 
 typedef struct {

@@ -10,12 +10,25 @@
 #define OLED_PAGE_COUNT   (OLED_HEIGHT / 8U)
 #define OLED_CHUNK_BYTES  (7U)
 #define OLED_SCALE(size)  (((size) >= 16U) ? 2U : 1U)
+#define OLED_I2C_TIMEOUT  (100000U)
 
 static uint8_t g_oledBuffer[OLED_WIDTH * OLED_PAGE_COUNT];
+static bool g_oledAvailable = true;
 
 static bool OLED_I2C_Write(const uint8_t *data, uint8_t len)
 {
+    uint32_t timeout = OLED_I2C_TIMEOUT;
+
+    if (!g_oledAvailable) {
+        return false;
+    }
+
     while (!(DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
+        if (--timeout == 0U) {
+            DL_I2C_resetControllerTransfer(I2C_INST);
+            g_oledAvailable = false;
+            return false;
+        }
     }
 
     (void) DL_I2C_fillControllerTXFIFO(I2C_INST, (uint8_t *) data, len);
@@ -23,10 +36,23 @@ static bool OLED_I2C_Write(const uint8_t *data, uint8_t len)
         I2C_INST, OLED_I2C_ADDR, DL_I2C_CONTROLLER_DIRECTION_TX, len);
     delay_cycles(1000);
 
+    timeout = OLED_I2C_TIMEOUT;
     while (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_BUSY) {
+        if (--timeout == 0U) {
+            DL_I2C_resetControllerTransfer(I2C_INST);
+            g_oledAvailable = false;
+            return false;
+        }
     }
 
-    return (DL_I2C_getControllerStatus(I2C_INST) & DL_I2C_CONTROLLER_STATUS_ERROR) == 0U;
+    if ((DL_I2C_getControllerStatus(I2C_INST) &
+            DL_I2C_CONTROLLER_STATUS_ERROR) != 0U) {
+        DL_I2C_resetControllerTransfer(I2C_INST);
+        g_oledAvailable = false;
+        return false;
+    }
+
+    return true;
 }
 
 static void OLED_WR_Byte(uint8_t data, uint8_t mode)

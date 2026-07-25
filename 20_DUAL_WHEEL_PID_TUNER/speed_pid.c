@@ -1,6 +1,6 @@
 #include "speed_pid.h"
 
-#define SPEED_PID_INTEGRAL_LIMIT_MS      (3000000)
+#define SPEED_PID_INTEGRAL_LIMIT_MS      (10000000)
 #define SPEED_PID_DERIVATIVE_LIMIT       (100000)
 #define SPEED_PID_DERIVATIVE_FILTER_DIV  (4)
 
@@ -112,14 +112,14 @@ uint32_t SpeedPID_Update(SpeedPID *controller,
 
     if (!((candidate_output >= SPEED_PID_MAX_OUTPUT_PERMILLE &&
               controller->error_pps > 0) ||
-            (candidate_output <= SPEED_PID_MIN_OUTPUT_PERMILLE &&
+            (candidate_output <= 0 &&
               controller->error_pps < 0))) {
         controller->integral_error_ms = candidate_integral;
     }
 
     output = calculate_output(controller, gains, target_pps,
         controller->integral_error_ms);
-    output = clamp_i32(output, SPEED_PID_MIN_OUTPUT_PERMILLE,
+    output = clamp_i32(output, 0,
         SPEED_PID_MAX_OUTPUT_PERMILLE);
     controller->output_permille = (uint32_t) output;
 

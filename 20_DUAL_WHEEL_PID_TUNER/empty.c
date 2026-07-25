@@ -2,15 +2,22 @@
 #include "bsp_encoder.h"
 #include "bsp_tb6612.h"
 #include "oled.h"
+#include "pid_uart.h"
 #include "speed_pid.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
-#define CONTROL_PERIOD_MS             (50U)
+#define CONTROL_PERIOD_MS             (10U)
+#define DRIVE_UPDATE_MS               (1U)
+#define TELEMETRY_PERIOD_MS           (50U)
 #define OLED_UPDATE_MS                (200U)
 #define KEY_POLL_MS                   (10U)
 #define KEY_DEBOUNCE_SAMPLES          (3U)
+#define REMOTE_WATCHDOG_MS            (2000U)
+#define SERIAL_COMMAND_SIZE           (64U)
+#define SERIAL_MESSAGE_SIZE           (192U)
 
 #define DEFAULT_TARGET_SPEED          (40)
 #define MIN_TARGET_SPEED              (0)
@@ -19,8 +26,10 @@
 #define AUTO_LOW_SPEED                (30)
 #define AUTO_HIGH_SPEED               (60)
 #define AUTO_STEP_PERIOD_MS           (3000U)
-#define TARGET_RAMP_PPS_PER_SECOND    (1000)
-#define SPEED_FILTER_DIVISOR          (3)
+#define TARGET_RAMP_PPS_PER_SECOND    (10000)
+#define TARGET_PPS_PER_UNIT           (200)
+#define SPEED_FILTER_DIVISOR          (5)
+#define DRIVE_DITHER_MIN_PERMILLE     (50U)
 
 #define KP_STEP_X1000                 (25)
 #define KI_STEP_X1000                 (25)
@@ -57,8 +66,8 @@ typedef struct {
 } KeyState;
 
 volatile int32_t g_tuneTargetSpeed = DEFAULT_TARGET_SPEED;
-volatile int32_t g_tuneKpX1000 = 200;
-volatile int32_t g_tuneKiX1000 = 100;
+volatile int32_t g_tuneKpX1000 = 20;
+volatile int32_t g_tuneKiX1000 = 30;
 volatile int32_t g_tuneKdX1000 = 0;
 
 static volatile uint32_t g_milliseconds;
@@ -74,11 +83,17 @@ static WheelSpeed g_rightSpeed;
 static int32_t g_leftFilteredPps;
 static int32_t g_rightFilteredPps;
 static int32_t g_rampedTargetPps;
+static uint32_t g_leftDriveAccumulator;
+static uint32_t g_rightDriveAccumulator;
+static uint32_t g_leftRequestedOutput;
+static uint32_t g_rightRequestedOutput;
 static TuneItem g_selected = TUNE_TARGET;
 static bool g_running;
 static bool g_autoStep;
 static bool g_autoHigh;
 static uint32_t g_lastAutoStep;
+static bool g_remoteWatchdog;
+static uint32_t g_lastRemoteCommandMs;
 
 void SysTick_Handler(void)
 {
@@ -101,6 +116,32 @@ static int32_t clamp_i32(int32_t value, int32_t minimum, int32_t maximum)
     return value;
 }
 
+static bool parse_i32(const char *text, int32_t *value)
+{
+    int32_t result = 0;
+    int32_t sign   = 1;
+    bool hasDigit  = false;
+
+    if ((text == 0) || (value == 0)) {
+        return false;
+    }
+    if (*text == '-') {
+        sign = -1;
+        text++;
+    }
+    while ((*text >= '0') && (*text <= '9')) {
+        hasDigit = true;
+        result   = (result * 10) + (int32_t) (*text - '0');
+        text++;
+    }
+    if (!hasDigit || (*text != '\0')) {
+        return false;
+    }
+
+    *value = result * sign;
+    return true;
+}
+
 static uint8_t key_is_pressed(uint32_t pin)
 {
     return (DL_GPIO_readPins(KEYS_PORT, pin) == 0U) ? 1U : 0U;
@@ -114,6 +155,10 @@ static void reset_control_state(void)
     g_leftFilteredPps = 0;
     g_rightFilteredPps = 0;
     g_rampedTargetPps = 0;
+    g_leftDriveAccumulator = 0U;
+    g_rightDriveAccumulator = 0U;
+    g_leftRequestedOutput = 0U;
+    g_rightRequestedOutput = 0U;
 }
 
 static void start_control(void)
@@ -127,6 +172,102 @@ static void stop_control(void)
     g_running = false;
     reset_control_state();
     TB6612_Motor_Stop();
+}
+
+static void serial_send_status(void)
+{
+    char message[SERIAL_MESSAGE_SIZE];
+
+    (void) snprintf(message, sizeof(message),
+        "STATUS,%lu,%u,%u,%ld,%ld,%ld,%ld\r\n",
+        (unsigned long) g_milliseconds,
+        g_running ? 1U : 0U,
+        g_autoStep ? 1U : 0U,
+        (long) g_tuneTargetSpeed,
+        (long) g_tuneKpX1000,
+        (long) g_tuneKiX1000,
+        (long) g_tuneKdX1000);
+    PID_UART_SendString(message);
+}
+
+static void serial_handle_command(const char *command)
+{
+    int32_t value;
+
+    g_lastRemoteCommandMs = g_milliseconds;
+
+    if (strcmp(command, "PING") == 0) {
+        PID_UART_SendString("PONG\r\n");
+        return;
+    }
+    if (strcmp(command, "GET") == 0) {
+        serial_send_status();
+        return;
+    }
+    if (strcmp(command, "RUN") == 0) {
+        g_remoteWatchdog = true;
+        start_control();
+        PID_UART_SendString("OK,RUN\r\n");
+        return;
+    }
+    if (strcmp(command, "STOP") == 0) {
+        g_remoteWatchdog = false;
+        stop_control();
+        PID_UART_SendString("OK,STOP\r\n");
+        return;
+    }
+    if (strcmp(command, "RESET") == 0) {
+        reset_control_state();
+        g_lastAutoStep = g_milliseconds;
+        PID_UART_SendString("OK,RESET\r\n");
+        return;
+    }
+    if (strcmp(command, "AUTO,1") == 0) {
+        g_remoteWatchdog    = true;
+        g_autoStep          = true;
+        g_autoHigh          = false;
+        g_tuneTargetSpeed   = AUTO_LOW_SPEED;
+        g_lastAutoStep      = g_milliseconds;
+        start_control();
+        PID_UART_SendString("OK,AUTO,1\r\n");
+        return;
+    }
+    if (strcmp(command, "AUTO,0") == 0) {
+        g_autoStep = false;
+        PID_UART_SendString("OK,AUTO,0\r\n");
+        return;
+    }
+    if ((strncmp(command, "SET,TARGET,", 11U) == 0) &&
+        parse_i32(&command[11], &value)) {
+        g_tuneTargetSpeed = clamp_i32(
+            value, MIN_TARGET_SPEED, MAX_TARGET_SPEED);
+        g_autoStep = false;
+        PID_UART_SendString("OK,SET,TARGET\r\n");
+        return;
+    }
+    if ((strncmp(command, "SET,KP,", 7U) == 0) &&
+        parse_i32(&command[7], &value)) {
+        g_tuneKpX1000 = clamp_i32(value, 0, KP_MAX_X1000);
+        reset_control_state();
+        PID_UART_SendString("OK,SET,KP\r\n");
+        return;
+    }
+    if ((strncmp(command, "SET,KI,", 7U) == 0) &&
+        parse_i32(&command[7], &value)) {
+        g_tuneKiX1000 = clamp_i32(value, 0, KI_MAX_X1000);
+        reset_control_state();
+        PID_UART_SendString("OK,SET,KI\r\n");
+        return;
+    }
+    if ((strncmp(command, "SET,KD,", 7U) == 0) &&
+        parse_i32(&command[7], &value)) {
+        g_tuneKdX1000 = clamp_i32(value, 0, KD_MAX_X1000);
+        reset_control_state();
+        PID_UART_SendString("OK,SET,KD\r\n");
+        return;
+    }
+
+    PID_UART_SendString("ERR,COMMAND\r\n");
 }
 
 static void adjust_selected(int32_t direction)
@@ -175,6 +316,7 @@ static void handle_key(KeyId key)
             adjust_selected(-1);
             break;
         case KEY_4:
+            g_remoteWatchdog = false;
             if (g_running) {
                 stop_control();
             } else {
@@ -182,6 +324,7 @@ static void handle_key(KeyId key)
             }
             break;
         case KEY_5:
+            g_remoteWatchdog = false;
             g_autoStep = !g_autoStep;
             if (g_autoStep) {
                 g_autoHigh = false;
@@ -246,7 +389,7 @@ static int32_t filter_speed(int32_t filtered, int32_t measured)
 
 static int32_t target_speed_to_pps(int32_t target_speed)
 {
-    return (target_speed * 1000) / (int32_t) CONTROL_PERIOD_MS;
+    return target_speed * TARGET_PPS_PER_UNIT;
 }
 
 static void update_ramped_target(int32_t command_pps, uint32_t elapsed_ms)
@@ -266,15 +409,45 @@ static void update_ramped_target(int32_t command_pps, uint32_t elapsed_ms)
     }
 }
 
+static uint32_t dither_drive_output(uint32_t requested,
+    uint32_t *accumulator)
+{
+    if (requested == 0U) {
+        *accumulator = 0U;
+        return 0U;
+    }
+    if (requested >= DRIVE_DITHER_MIN_PERMILLE) {
+        *accumulator = 0U;
+        return requested;
+    }
+
+    *accumulator += requested;
+    if (*accumulator >= DRIVE_DITHER_MIN_PERMILLE) {
+        *accumulator -= DRIVE_DITHER_MIN_PERMILLE;
+        return DRIVE_DITHER_MIN_PERMILLE;
+    }
+    return 0U;
+}
+
 static void apply_output(uint32_t left_permille, uint32_t right_permille)
 {
+    if (!g_running) {
+        TB6612_Motor_Stop();
+        return;
+    }
+
+    left_permille = dither_drive_output(left_permille,
+        &g_leftDriveAccumulator);
+    right_permille = dither_drive_output(right_permille,
+        &g_rightDriveAccumulator);
+
     if (left_permille == 0U) {
-        AO_Stop();
+        AO_Coast();
     } else {
         AO_ControlPermille(LEFT_FORWARD_DIR, left_permille);
     }
     if (right_permille == 0U) {
-        BO_Stop();
+        BO_Coast();
     } else {
         BO_ControlPermille(RIGHT_FORWARD_DIR, right_permille);
     }
@@ -290,12 +463,13 @@ static void control_update(uint32_t elapsed_ms)
     g_leftSpeed = Encoder_UpdateSpeed(ENCODER_LEFT, elapsed_ms);
     g_rightSpeed = Encoder_UpdateSpeed(ENCODER_RIGHT, elapsed_ms);
     g_leftFilteredPps = filter_speed(g_leftFilteredPps,
-        g_leftSpeed.pps);
+        abs_i32(g_leftSpeed.pps));
     g_rightFilteredPps = filter_speed(g_rightFilteredPps,
-        g_rightSpeed.pps);
+        abs_i32(g_rightSpeed.pps));
 
     if (!g_running) {
-        apply_output(0U, 0U);
+        g_leftRequestedOutput = 0U;
+        g_rightRequestedOutput = 0U;
         return;
     }
 
@@ -310,15 +484,41 @@ static void control_update(uint32_t elapsed_ms)
         g_rampedTargetPps, g_leftFilteredPps, elapsed_ms);
     right_output = SpeedPID_Update(&g_rightController, &gains,
         g_rampedTargetPps, g_rightFilteredPps, elapsed_ms);
-    apply_output(left_output, right_output);
+    g_leftRequestedOutput = left_output;
+    g_rightRequestedOutput = right_output;
+}
+
+static void serial_send_telemetry(void)
+{
+    char message[SERIAL_MESSAGE_SIZE];
+    int32_t leftError  = g_rampedTargetPps - g_leftFilteredPps;
+    int32_t rightError = g_rampedTargetPps - g_rightFilteredPps;
+
+    (void) snprintf(message, sizeof(message),
+        "DATA,%lu,%u,%u,%ld,%ld,%ld,%ld,%ld,%ld,%lu,%lu,%ld,%ld,%ld\r\n",
+        (unsigned long) g_milliseconds,
+        g_running ? 1U : 0U,
+        g_autoStep ? 1U : 0U,
+        (long) g_tuneTargetSpeed,
+        (long) g_rampedTargetPps,
+        (long) g_leftFilteredPps,
+        (long) g_rightFilteredPps,
+        (long) leftError,
+        (long) rightError,
+        (unsigned long) g_leftController.output_permille,
+        (unsigned long) g_rightController.output_permille,
+        (long) g_tuneKpX1000,
+        (long) g_tuneKiX1000,
+        (long) g_tuneKdX1000);
+    PID_UART_SendString(message);
 }
 
 static void format_wheel(char *text, size_t size, char wheel,
     int32_t target_speed, int32_t filtered_pps)
 {
     char sign = (filtered_pps < 0) ? '-' : '+';
-    uint32_t actual_speed = (((uint32_t) abs_i32(filtered_pps) *
-        CONTROL_PERIOD_MS) + 500U) / 1000U;
+    uint32_t actual_speed = ((uint32_t) abs_i32(filtered_pps) +
+        (TARGET_PPS_PER_UNIT / 2U)) / TARGET_PPS_PER_UNIT;
 
     (void) snprintf(text, size, "%c T:%03ld A:%c%03lu", wheel,
         (long) target_speed, sign, (unsigned long) actual_speed);
@@ -389,11 +589,16 @@ static void oled_show_status(void)
 int main(void)
 {
     uint32_t last_control;
+    uint32_t last_drive;
+    uint32_t last_telemetry;
     uint32_t last_oled;
     uint32_t last_key_poll;
+    char serialCommand[SERIAL_COMMAND_SIZE];
 
     SYSCFG_DL_init();
     (void) SysTick_Config(CPUCLK_FREQ / 1000U);
+    PID_UART_Init();
+    PID_UART_SendString("READY,PID_TUNER,RTT_UART\r\n");
     TB6612_Motor_Stop();
     DL_TimerA_startCounter(PWM_0_INST);
     Encoder_Init();
@@ -405,12 +610,32 @@ int main(void)
     oled_show_status();
 
     last_control = g_milliseconds;
+    last_drive = g_milliseconds;
+    last_telemetry = g_milliseconds;
     last_oled = g_milliseconds;
     last_key_poll = g_milliseconds;
     g_lastAutoStep = g_milliseconds;
+    g_remoteWatchdog = false;
+    g_lastRemoteCommandMs = g_milliseconds;
+    serial_send_status();
 
     while (1) {
         uint32_t now = g_milliseconds;
+
+        while (PID_UART_ReadLine(serialCommand, sizeof(serialCommand))) {
+            serial_handle_command(serialCommand);
+        }
+
+        /* Command handling may cross a SysTick boundary. Refresh now before
+         * subtracting the command timestamp to avoid unsigned underflow. */
+        now = g_milliseconds;
+
+        if (g_remoteWatchdog && g_running &&
+            ((now - g_lastRemoteCommandMs) >= REMOTE_WATCHDOG_MS)) {
+            g_remoteWatchdog = false;
+            stop_control();
+            PID_UART_SendString("FAULT,REMOTE_TIMEOUT\r\n");
+        }
 
         if ((now - last_key_poll) >= KEY_POLL_MS) {
             last_key_poll = now;
@@ -427,6 +652,14 @@ int main(void)
             uint32_t elapsed_ms = now - last_control;
             last_control = now;
             control_update(elapsed_ms);
+        }
+        if ((now - last_drive) >= DRIVE_UPDATE_MS) {
+            last_drive = now;
+            apply_output(g_leftRequestedOutput, g_rightRequestedOutput);
+        }
+        if ((now - last_telemetry) >= TELEMETRY_PERIOD_MS) {
+            last_telemetry = now;
+            serial_send_telemetry();
         }
         if ((now - last_oled) >= OLED_UPDATE_MS) {
             last_oled = now;

@@ -6,12 +6,14 @@
 const GPIO   = scripting.addModule("/ti/driverlib/GPIO", {}, false);
 const I2C    = scripting.addModule("/ti/driverlib/I2C", {}, false);
 const PWM    = scripting.addModule("/ti/driverlib/PWM", {}, false);
+const UART   = scripting.addModule("/ti/driverlib/UART", {}, false);
 const TB6612 = GPIO.addInstance();
 const ENCODER_L = GPIO.addInstance();
 const ENCODER_R = GPIO.addInstance();
 const KEYS   = GPIO.addInstance();
 const I2C1   = I2C.addInstance();
 const PWM0   = PWM.addInstance();
+const DEBUGUART = UART.addInstance();
 const SYSCTL = scripting.addModule("/ti/driverlib/SYSCTL");
 
 TB6612.$name                          = "TB6612";
@@ -95,8 +97,8 @@ I2C1.peripheral.sclPin.$assign = "PB2";
 I2C1.peripheral.sdaPin.$assign = "PB3";
 
 PWM0.$name                      = "PWM_0";
-PWM0.clockPrescale              = 256;
-PWM0.timerCount                 = 1000;
+PWM0.clockPrescale              = 1;
+PWM0.timerCount                 = 1600;
 PWM0.pwmMode                    = "EDGE_ALIGN";
 PWM0.peripheral.$assign         = "TIMA1";
 PWM0.peripheral.ccp0Pin.$assign = "PA17";
@@ -105,6 +107,16 @@ PWM0.PWM_CHANNEL_0.$name        = "C0";
 PWM0.PWM_CHANNEL_0.dutyCycle    = 0;
 PWM0.PWM_CHANNEL_1.$name        = "C1";
 PWM0.PWM_CHANNEL_1.dutyCycle    = 0;
+
+DEBUGUART.$name                    = "DEBUG_UART";
+DEBUGUART.profile                  = "CONFIG_PROFILE_1";
+DEBUGUART.peripheral.$assign       = "UART0";
+DEBUGUART.targetBaudRate           = 115200;
+DEBUGUART.enableInternalLoopback   = false;
+DEBUGUART.enabledInterrupts        = ["RX"];
+DEBUGUART.enableFIFO               = false;
+DEBUGUART.peripheral.rxPin.$assign = "PA11";
+DEBUGUART.peripheral.txPin.$assign = "PA10";
 
 const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
 

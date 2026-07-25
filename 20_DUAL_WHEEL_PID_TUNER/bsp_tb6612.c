@@ -33,6 +33,22 @@ void BO_Stop(void)
     BIN2_OUT(1);
 }
 
+void AO_Coast(void)
+{
+    DL_TimerA_setCaptureCompareValue(
+        PWM_0_INST, TB6612_PWM_PERIOD_COUNT, GPIO_PWM_0_C1_IDX);
+    AIN1_OUT(0);
+    AIN2_OUT(0);
+}
+
+void BO_Coast(void)
+{
+    DL_TimerA_setCaptureCompareValue(
+        PWM_0_INST, TB6612_PWM_PERIOD_COUNT, GPIO_PWM_0_C0_IDX);
+    BIN1_OUT(0);
+    BIN2_OUT(0);
+}
+
 void AO_Control(uint8_t dir, uint32_t speed)
 {
     if (speed > TB6612_MAX_SPEED_PERCENT) {

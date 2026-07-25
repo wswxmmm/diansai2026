@@ -5,7 +5,7 @@
 
 #define TB6612_MAX_SPEED_PERCENT   (100U)
 #define TB6612_MAX_DUTY_PERMILLE   (1000U)
-#define TB6612_PWM_PERIOD_COUNT    (1000U)
+#define TB6612_PWM_PERIOD_COUNT    (1600U)
 
 #define AIN1_OUT(x) ((x) ? DL_GPIO_setPins(TB6612_PORT, TB6612_AIN1_PIN) : DL_GPIO_clearPins(TB6612_PORT, TB6612_AIN1_PIN))
 #define AIN2_OUT(x) ((x) ? DL_GPIO_setPins(TB6612_PORT, TB6612_AIN2_PIN) : DL_GPIO_clearPins(TB6612_PORT, TB6612_AIN2_PIN))
@@ -15,6 +15,8 @@
 void TB6612_Motor_Stop(void);
 void AO_Stop(void);
 void BO_Stop(void);
+void AO_Coast(void);
+void BO_Coast(void);
 void AO_Control(uint8_t dir, uint32_t speed);
 void BO_Control(uint8_t dir, uint32_t speed);
 void AO_ControlPermille(uint8_t dir, uint32_t duty_permille);
