@@ -23,7 +23,7 @@ percent. `M` is manual target mode and `A` in the header is automatic mode.
 
 J-Link and UART are not required after the firmware has been flashed. Keep the
 controller and motor driver powered, place the car on a clear straight track,
-and press KEY4. Both wheels run at target 90 for ten seconds and then stop
+and press KEY4. Both wheels run at target 135 for ten seconds and then stop
 automatically. Press KEY4 again while moving to stop immediately. After a
 normal finish, `LINE TEST DONE` and the captured left/right speeds remain on
 the OLED. KEY6 clears the result.

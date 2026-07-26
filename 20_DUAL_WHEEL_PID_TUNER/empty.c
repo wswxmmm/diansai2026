@@ -21,12 +21,12 @@
 
 #define DEFAULT_TARGET_SPEED          (40)
 #define MIN_TARGET_SPEED              (0)
-#define MAX_TARGET_SPEED              (100)
+#define MAX_TARGET_SPEED              (150)
 #define TARGET_SPEED_STEP             (5)
 #define AUTO_LOW_SPEED                (30)
 #define AUTO_HIGH_SPEED               (60)
 #define AUTO_STEP_PERIOD_MS           (3000U)
-#define STRAIGHT_TEST_TARGET_SPEED     (90)
+#define STRAIGHT_TEST_TARGET_SPEED     (135)
 #define STRAIGHT_TEST_DURATION_MS      (10000U)
 #define TARGET_RAMP_PPS_PER_SECOND    (10000)
 #define TARGET_PPS_PER_UNIT           (200)
@@ -433,8 +433,7 @@ static void update_ramped_target(int32_t command_pps, uint32_t elapsed_ms)
             0, command_pps);
     } else if (g_rampedTargetPps > command_pps) {
         g_rampedTargetPps = clamp_i32(g_rampedTargetPps - step,
-            command_pps, MAX_TARGET_SPEED * 1000 /
-                (int32_t) CONTROL_PERIOD_MS);
+            command_pps, MAX_TARGET_SPEED * TARGET_PPS_PER_UNIT);
     }
 }
 
