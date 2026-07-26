@@ -94,6 +94,16 @@ bool HC04_EnsureRole(HC04_Role role)
     return HC04_SendCommand("AT+ROLE=?", roleResponse, 300U);
 }
 
+bool HC04_ClearPairing(void)
+{
+    bool cleared = HC04_SendCommand("AT+CLEAR", "OK", 500U);
+
+    if (cleared) {
+        HC04_DelayMs(800U);
+    }
+    return cleared;
+}
+
 void HC04_SendByte(uint8_t data)
 {
     while (DL_UART_isBusy(HC04_UART_INST)) {

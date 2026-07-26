@@ -11,6 +11,7 @@ typedef enum {
 
 void HC04_Init(void);
 bool HC04_EnsureRole(HC04_Role role);
+bool HC04_ClearPairing(void);
 void HC04_SendByte(uint8_t data);
 void HC04_SendString(const char *text);
 bool HC04_ReadByte(uint8_t *data);

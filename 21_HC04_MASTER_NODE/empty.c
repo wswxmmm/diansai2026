@@ -23,6 +23,7 @@ static uint32_t g_lastAckSequence;
 static uint32_t g_lastAckMs;
 static bool g_oledReady;
 static bool g_roleReady;
+static bool g_pairingCleared;
 
 static void Debug_SendByte(uint8_t data)
 {
@@ -190,6 +191,12 @@ int main(void)
     Debug_SendString(g_roleReady ?
         "MASTER ROLE: ready\r\n" :
         "MASTER ROLE: AT unavailable, continuing\r\n");
+    if (g_roleReady) {
+        g_pairingCleared = HC04_ClearPairing();
+        Debug_SendString(g_pairingCleared ?
+            "MASTER PAIRING: old address cleared\r\n" :
+            "MASTER PAIRING: clear failed\r\n");
+    }
     Screen_Update();
 
     while (1) {
