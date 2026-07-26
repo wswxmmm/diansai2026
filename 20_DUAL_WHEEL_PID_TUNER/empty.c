@@ -26,6 +26,8 @@
 #define AUTO_LOW_SPEED                (30)
 #define AUTO_HIGH_SPEED               (60)
 #define AUTO_STEP_PERIOD_MS           (3000U)
+#define STRAIGHT_TEST_TARGET_SPEED     (30)
+#define STRAIGHT_TEST_DURATION_MS      (3000U)
 #define TARGET_RAMP_PPS_PER_SECOND    (10000)
 #define TARGET_PPS_PER_UNIT           (200)
 #define SPEED_FILTER_DIVISOR          (5)
@@ -94,6 +96,11 @@ static bool g_autoHigh;
 static uint32_t g_lastAutoStep;
 static bool g_remoteWatchdog;
 static uint32_t g_lastRemoteCommandMs;
+static bool g_straightTest;
+static bool g_straightTestDone;
+static uint32_t g_straightTestStartMs;
+static int32_t g_straightResultLeftPps;
+static int32_t g_straightResultRightPps;
 
 void SysTick_Handler(void)
 {
@@ -164,14 +171,35 @@ static void reset_control_state(void)
 static void start_control(void)
 {
     reset_control_state();
+    g_straightTest = false;
+    g_straightTestDone = false;
     g_running = true;
 }
 
 static void stop_control(void)
 {
     g_running = false;
+    g_straightTest = false;
+    g_straightTestDone = false;
     reset_control_state();
     TB6612_Motor_Stop();
+}
+
+static void start_straight_test(void)
+{
+    g_autoStep = false;
+    g_tuneTargetSpeed = STRAIGHT_TEST_TARGET_SPEED;
+    start_control();
+    g_straightTest = true;
+    g_straightTestStartMs = g_milliseconds;
+}
+
+static void complete_straight_test(void)
+{
+    g_straightResultLeftPps = g_leftFilteredPps;
+    g_straightResultRightPps = g_rightFilteredPps;
+    stop_control();
+    g_straightTestDone = true;
 }
 
 static void serial_send_status(void)
@@ -320,7 +348,7 @@ static void handle_key(KeyId key)
             if (g_running) {
                 stop_control();
             } else {
-                start_control();
+                start_straight_test();
             }
             break;
         case KEY_5:
@@ -336,6 +364,7 @@ static void handle_key(KeyId key)
             }
             break;
         case KEY_6:
+            g_straightTestDone = false;
             reset_control_state();
             g_lastAutoStep = g_milliseconds;
             break;
@@ -555,19 +584,34 @@ static void format_selected(char *text, size_t size)
 static void oled_show_status(void)
 {
     char line[22];
+    int32_t displayLeftPps = g_leftFilteredPps;
+    int32_t displayRightPps = g_rightFilteredPps;
 
     OLED_Clear();
     OLED_DrawRectangle(0, 0, 127, 63, 1);
-    (void) snprintf(line, sizeof(line), "PID %s %c %luMS",
-        g_running ? "RUN" : "STOP", g_autoStep ? 'A' : 'M',
-        (unsigned long) CONTROL_PERIOD_MS);
+    if (g_straightTest) {
+        uint32_t elapsed = g_milliseconds - g_straightTestStartMs;
+        uint32_t remaining = (elapsed < STRAIGHT_TEST_DURATION_MS) ?
+            STRAIGHT_TEST_DURATION_MS - elapsed : 0U;
+        (void) snprintf(line, sizeof(line), "LINE RUN %lu.%luS",
+            (unsigned long) (remaining / 1000U),
+            (unsigned long) ((remaining % 1000U) / 100U));
+    } else if (g_straightTestDone) {
+        (void) snprintf(line, sizeof(line), "LINE TEST DONE");
+        displayLeftPps = g_straightResultLeftPps;
+        displayRightPps = g_straightResultRightPps;
+    } else {
+        (void) snprintf(line, sizeof(line), "PID %s %c %luMS",
+            g_running ? "RUN" : "STOP", g_autoStep ? 'A' : 'M',
+            (unsigned long) CONTROL_PERIOD_MS);
+    }
     OLED_ShowString(4, 2, line, 8, 1);
 
     format_wheel(line, sizeof(line), 'L', g_tuneTargetSpeed,
-        g_leftFilteredPps);
+        displayLeftPps);
     OLED_ShowString(6, 12, line, 8, 1);
     format_wheel(line, sizeof(line), 'R', g_tuneTargetSpeed,
-        g_rightFilteredPps);
+        displayRightPps);
     OLED_ShowString(6, 22, line, 8, 1);
 
     (void) snprintf(line, sizeof(line), "O L:%lu.%lu R:%lu.%lu",
@@ -635,6 +679,11 @@ int main(void)
             g_remoteWatchdog = false;
             stop_control();
             PID_UART_SendString("FAULT,REMOTE_TIMEOUT\r\n");
+        }
+
+        if (g_straightTest &&
+            ((now - g_straightTestStartMs) >= STRAIGHT_TEST_DURATION_MS)) {
+            complete_straight_test();
         }
 
         if ((now - last_key_poll) >= KEY_POLL_MS) {

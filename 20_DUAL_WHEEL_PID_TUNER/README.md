@@ -10,7 +10,7 @@ Lift both drive wheels before the first run.
 | KEY1 / PB17 | Select target, KP, KI or KD |
 | KEY2 / PB18 | Increase selected value |
 | KEY3 / PB19 | Decrease selected value |
-| KEY4 / PB20 | Start or stop both wheels |
+| KEY4 / PB20 | Start the standalone straight-line test, or stop early |
 | KEY5 / PB24 | Toggle the 30/60 encoder-speed automatic step test |
 | KEY6 / PB25 | Clear PID state, speed filters and encoder counts |
 
@@ -18,6 +18,15 @@ The target and measured speed share a 0 to 100 display scale. One display unit
 is 200 encoder pulses per second, and each key press changes the target by 5.
 The OLED uses `T` for target, `A` for actual speed and `O` for PID output in
 percent. `M` is manual target mode and `A` in the header is automatic mode.
+
+## Standalone straight-line test
+
+J-Link and UART are not required after the firmware has been flashed. Keep the
+controller and motor driver powered, place the car on a clear straight track,
+and press KEY4. Both wheels run at target 30 for three seconds and then stop
+automatically. Press KEY4 again while moving to stop immediately. After a
+normal finish, `LINE TEST DONE` and the captured left/right speeds remain on
+the OLED. KEY6 clears the result.
 
 ## Fast tuning order
 
