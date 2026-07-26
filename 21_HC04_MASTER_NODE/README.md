@@ -16,8 +16,8 @@ HC-04 master node for one TMX MSPM0G3507 board. It sends
 | --- | --- |
 | VCC | 3.3V |
 | GND | GND |
-| SCL | PA1 / I2C SCL |
-| SDA | PA0 / I2C SDA |
+| SCL | PB2 / I2C1 SCL |
+| SDA | PB3 / I2C1 SDA |
 
 UART2 runs at 9600 8N1. The firmware attempts to set `AT+ROLE=M` during
 startup. If the module is already connected, AT mode may be unavailable; the
