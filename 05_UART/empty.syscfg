@@ -13,7 +13,6 @@ UART1.$name                      = "UART_0";
 UART1.profile                    = "CONFIG_PROFILE_1";
 UART1.peripheral.$assign         = "UART0";
 UART1.targetBaudRate             = 9600;
-UART1.enableInternalLoopback     = false;
 UART1.enabledInterrupts          = ["RX"];
 UART1.enableFIFO                 = false;
 UART1.peripheral.rxPin.$assign   = "PA11";

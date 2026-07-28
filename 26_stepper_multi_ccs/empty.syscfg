@@ -1,0 +1,50 @@
+/**
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const GPIO    = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const LED     = GPIO.addInstance();
+const KEYIN   = GPIO.addInstance();
+const UART    = scripting.addModule("/ti/driverlib/UART", {}, false);
+const UARTBUS = UART.addInstance();
+const UARTRPI = UART.addInstance();
+const SYSCTL  = scripting.addModule("/ti/driverlib/SYSCTL");
+
+UARTBUS.$name                    = "UART_BUS";
+UARTBUS.profile                  = "CONFIG_PROFILE_1";
+UARTBUS.peripheral.$assign       = "UART0";
+UARTBUS.targetBaudRate           = 115200;
+UARTBUS.enableInternalLoopback   = false;
+UARTBUS.enableFIFO               = false;
+UARTBUS.peripheral.rxPin.$assign = "PA11";
+UARTBUS.peripheral.txPin.$assign = "PA10";
+
+/* Raspberry Pi 5 link: PB12 TX -> Pi pin 10, PB13 RX <- Pi pin 8. */
+UARTRPI.$name                      = "UART_RPI";
+UARTRPI.profile                    = "CONFIG_PROFILE_1";
+UARTRPI.peripheral.$assign         = "UART3";
+UARTRPI.targetBaudRate             = 115200;
+UARTRPI.enableInternalLoopback     = false;
+UARTRPI.enabledInterrupts          = ["RX"];
+UARTRPI.enableFIFO                 = false;
+UARTRPI.peripheral.rxPin.$assign   = "PB13";
+UARTRPI.peripheral.txPin.$assign   = "PB12";
+
+LED.$name                         = "LED1";
+LED.associatedPins[0].$name       = "PIN_22";
+LED.associatedPins[0].pin.$assign = "PB22";
+
+KEYIN.$name                              = "KEY";
+KEYIN.associatedPins[0].$name            = "PIN_21";
+KEYIN.associatedPins[0].direction        = "INPUT";
+KEYIN.associatedPins[0].internalResistor = "PULL_UP";
+KEYIN.associatedPins[0].pin.$assign      = "PB21";
+
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

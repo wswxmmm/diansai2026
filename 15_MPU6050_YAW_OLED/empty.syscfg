@@ -1,0 +1,58 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+
+const ADC12   = scripting.addModule("/ti/driverlib/ADC12", {}, false);
+const GPIO    = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const I2C     = scripting.addModule("/ti/driverlib/I2C", {}, false);
+const GRAYADC = ADC12.addInstance();
+const GRAYADDR = GPIO.addInstance();
+const OLEDI2C = I2C.addInstance();
+const MPUI2C  = I2C.addInstance();
+const SYSCTL  = scripting.addModule("/ti/driverlib/SYSCTL");
+
+GRAYADC.$name                      = "GRAY_ADC";
+GRAYADC.sampClkSrc                 = "DL_ADC12_CLOCK_ULPCLK";
+GRAYADC.sampClkDiv                 = "DL_ADC12_CLOCK_DIVIDE_8";
+GRAYADC.adcMem0chansel             = "DL_ADC12_INPUT_CHAN_0";
+GRAYADC.sampleTime0                = "2 us";
+GRAYADC.powerDownMode              = "DL_ADC12_POWER_DOWN_MODE_MANUAL";
+GRAYADC.peripheral.$assign         = "ADC0";
+GRAYADC.peripheral.adcPin0.$assign = "PA27";
+
+GRAYADDR.$name                         = "Gray_Address";
+GRAYADDR.associatedPins.create(3);
+GRAYADDR.associatedPins[0].$name       = "PIN_0";
+GRAYADDR.associatedPins[0].pin.$assign = "PB0";
+GRAYADDR.associatedPins[1].$name       = "PIN_1";
+GRAYADDR.associatedPins[1].pin.$assign = "PB1";
+GRAYADDR.associatedPins[2].$name       = "PIN_2";
+GRAYADDR.associatedPins[2].pin.$assign = "PB4";
+
+OLEDI2C.$name                       = "I2C";
+OLEDI2C.basicEnableController       = true;
+OLEDI2C.basicControllerBusSpeed     = 400000;
+OLEDI2C.advAnalogGlitchFilter       = "DISABLED";
+OLEDI2C.peripheral.$assign          = "I2C1";
+OLEDI2C.peripheral.sclPin.$assign   = "PB2";
+OLEDI2C.peripheral.sdaPin.$assign   = "PB3";
+
+MPUI2C.$name                       = "MPU_I2C";
+MPUI2C.basicEnableController       = true;
+MPUI2C.basicControllerBusSpeed     = 100000;
+MPUI2C.advAnalogGlitchFilter       = "DISABLED";
+MPUI2C.peripheral.$assign          = "I2C0";
+MPUI2C.peripheral.sclPin.$assign   = "PA1";
+MPUI2C.peripheral.sdaPin.$assign   = "PA0";
+
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

@@ -1,0 +1,35 @@
+/**
+ * @cliArgs --device "MSPM0G350X" --part "Default" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @v2CliArgs --device "MSPM0G3507" --package "LQFP-64(PM)" --product "mspm0_sdk@2.10.00.04"
+ * @versions {"tool":"1.26.2+4477"}
+ */
+const GPIO      = scripting.addModule("/ti/driverlib/GPIO", {}, false);
+const UART      = scripting.addModule("/ti/driverlib/UART", {}, false);
+const STARTKEY  = GPIO.addInstance();
+const HC04UART  = UART.addInstance();
+const SYSCTL    = scripting.addModule("/ti/driverlib/SYSCTL");
+
+STARTKEY.$name                              = "START_KEY";
+STARTKEY.associatedPins.create(1);
+STARTKEY.associatedPins[0].$name            = "BUTTON";
+STARTKEY.associatedPins[0].direction        = "INPUT";
+STARTKEY.associatedPins[0].internalResistor = "PULL_UP";
+STARTKEY.associatedPins[0].pin.$assign      = "PB21";
+
+HC04UART.$name                    = "HC04_UART";
+HC04UART.profile                  = "CONFIG_PROFILE_1";
+HC04UART.peripheral.$assign       = "UART2";
+HC04UART.targetBaudRate           = 9600;
+HC04UART.enableInternalLoopback   = false;
+HC04UART.enabledInterrupts        = ["RX"];
+HC04UART.enableFIFO               = false;
+HC04UART.peripheral.rxPin.$assign = "PB16";
+HC04UART.peripheral.txPin.$assign = "PB15";
+
+const Board = scripting.addModule("/ti/driverlib/Board", {}, false);
+
+SYSCTL.forceDefaultClkConfig = true;
+Board.peripheral.$suggestSolution          = "DEBUGSS";
+Board.peripheral.swclkPin.$suggestSolution = "PA20";
+Board.peripheral.swdioPin.$suggestSolution = "PA19";
+SYSCTL.peripheral.$suggestSolution         = "SYSCTL";

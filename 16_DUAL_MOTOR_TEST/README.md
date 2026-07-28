@@ -66,9 +66,9 @@ consecutive samples. A wide-line corner candidate is retained for 200 ms; after
 two samples it can still start a turn if the line then disappears, even if the
 intermediate channel count drops gradually. Ordinary line loss has a 180 ms
 grace period instead of stopping on one sample. If the line is still missing,
-the car enters a low-speed `FIND` state rather than stopping. It then turns
-along a tight forward arc: the outside wheel moves slowly while the inside
-wheel stops. After
+the car enters a `FIND` state rather than stopping. It then turns along a
+tight forward arc, with the outside wheel moving faster than the inside wheel.
+After
 the center sensors leave the old line, three consecutive center-line detections
 at 55 degrees or more complete the turn. The car then tracks at reduced speed
 for 300 ms before returning to normal speed. It slows the outside wheel again at
@@ -79,10 +79,12 @@ ambiguous-corner direction is right; change
 `DEFAULT_TURN_RIGHT` to -1 for a left-turn course.
 
 Motor commands use a 0-100 percent range. Tracking uses 17 percent base speed.
-Cornering uses 11/3 percent outside/inside wheel speeds, then 10/3 percent while
-searching. The OLED header continuously shows the signed current/last corner
-angle, state and completed/target corner count. The remaining rows show all
-eight raw grayscale ADC values. Keep the car completely still during the MPU
+Cornering uses 20/5 percent outside/inside wheel speeds, then 16/4 percent while
+searching. The OLED header shows completed/target laps, progress through the
+four corners of the current lap, and the car state. For example, `L:1/2 C:2/4`
+means one lap is complete and the car has passed two corners of lap two. In
+continuous mode the target is shown as `*`. The remaining rows show all eight
+raw grayscale ADC values. Keep the car completely still during the MPU
 calibration shown at startup.
 
 KEY1 stops after one lap, KEY2 stops after two laps, and KEY3 keeps tracking

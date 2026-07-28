@@ -27,10 +27,10 @@
 
 #define FOLLOW_BASE_SPEED            (17)
 #define FOLLOW_MAX_SPEED             (25)
-#define TURN_OUTER_SPEED             (11)
-#define TURN_INNER_SPEED             (3)
-#define TURN_SEARCH_OUTER_SPEED      (10)
-#define TURN_SEARCH_INNER_SPEED      (3)
+#define TURN_OUTER_SPEED             (20)
+#define TURN_INNER_SPEED             (5)
+#define TURN_SEARCH_OUTER_SPEED      (16)
+#define TURN_SEARCH_INNER_SPEED      (4)
 #define RECOVERY_BASE_SPEED          (12)
 #define RECOVERY_MAX_SPEED           (17)
 #define RECOVERY_MAX_CORRECTION      (4)
@@ -89,7 +89,7 @@ static CarState g_carState = CAR_IDLE;
 static bool g_mpuReady;
 static uint8_t g_targetLaps;
 static bool g_runContinuous;
-static uint8_t g_cornerCount;
+static uint32_t g_cornerCount;
 static uint8_t g_cornerConfirm;
 static uint32_t g_cornerCandidateUntil;
 static int32_t g_lastLineError;
@@ -373,7 +373,7 @@ static void finish_corner(uint32_t now)
     g_lineLostActive = false;
 
     if (!g_runContinuous &&
-        (g_cornerCount >= (uint8_t) (g_targetLaps * 4U))) {
+        (g_cornerCount >= ((uint32_t) g_targetLaps * 4U))) {
         apply_wheel_speeds(0, 0);
         g_carState = CAR_DONE;
     } else {
@@ -600,23 +600,24 @@ static const char *state_name(void)
 static void oled_show_gray(void)
 {
     char line[22];
-    int32_t signed_angle_deg;
     uint32_t row;
-    uint8_t target_corners = (uint8_t) (g_targetLaps * 4U);
+    uint32_t completed_laps = g_cornerCount / 4U;
+    uint32_t corner_in_lap = g_cornerCount % 4U;
 
     OLED_Clear();
     OLED_DrawRectangle(0, 0, 127, 63, 1);
-    signed_angle_deg = (int32_t) (g_turnAngleMdeg / 1000U);
-    if (g_turnDirection < 0) {
-        signed_angle_deg = -signed_angle_deg;
-    }
     if (g_runContinuous) {
-        (void) snprintf(line, sizeof(line), "A:%+04ld %s %u/*",
-            (long) signed_angle_deg, state_name(), g_cornerCount);
+        (void) snprintf(line, sizeof(line), "L:%lu/* C:%lu/4 %s",
+            (unsigned long) completed_laps,
+            (unsigned long) corner_in_lap, state_name());
+    } else if (g_targetLaps != 0U) {
+        (void) snprintf(line, sizeof(line), "L:%lu/%u C:%lu/4 %s",
+            (unsigned long) completed_laps, g_targetLaps,
+            (unsigned long) corner_in_lap, state_name());
     } else {
-        (void) snprintf(line, sizeof(line), "A:%+04ld %s %u/%u",
-            (long) signed_angle_deg, state_name(),
-            g_cornerCount, target_corners);
+        (void) snprintf(line, sizeof(line), "L:%lu/- C:%lu/4 %s",
+            (unsigned long) completed_laps,
+            (unsigned long) corner_in_lap, state_name());
     }
     OLED_ShowString(4, 3, line, 8, 1);
 

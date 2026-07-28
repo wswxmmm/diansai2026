@@ -16,3 +16,8 @@
 **/.clangd/.cache/
 .syscfg-check/
 .compile-check/
+
+# Local scratch/generated files
+/tmp/
+/true
+**/__pycache__/

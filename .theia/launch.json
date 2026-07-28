@@ -1,16 +1,131 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "01_LED",
-      "type": "ccs-debug",
-      "request": "launch",
-      "projectInfo": {
-        "name": "01_LED",
-        "resourceId": "/01_LED"
-      }
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "15_MPU6050_YAW_OLED",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "15_MPU6050_YAW_OLED",
+                "resourceId": "/15_MPU6050_YAW_OLED"
+            }
+        },
+        {
+            "name": "14_TB6612_ENCODER_OLED",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "14_TB6612_ENCODER_OLED",
+                "resourceId": "/14_TB6612_ENCODER_OLED"
+            }
+        },
+        {
+            "name": "13_TB6612_MOTOR",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "13_TB6612_MOTOR",
+                "resourceId": "/13_TB6612_MOTOR"
+            }
+        },
+        {
+            "name": "01_LED",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "01_LED",
+                "resourceId": "/01_LED"
+            }
+        },
+        {
+            "name": "16_DUAL_MOTOR_TEST",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "16_DUAL_MOTOR_TEST",
+                "resourceId": "/16_DUAL_MOTOR_TEST"
+            }
+        },
+        {
+            "name": "17_MPU6050_ANGLE_TEST",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "17_MPU6050_ANGLE_TEST",
+                "resourceId": "/17_MPU6050_ANGLE_TEST"
+            }
+        },
+        {
+            "name": "18_DUAL_WHEEL_PID_TEST",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "18_DUAL_WHEEL_PID_TEST",
+                "resourceId": "/18_DUAL_WHEEL_PID_TEST"
+            }
+        },
+        {
+            "name": "19_DUAL_WHEEL_PWM_TEST",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "19_DUAL_WHEEL_PWM_TEST",
+                "resourceId": "/19_DUAL_WHEEL_PWM_TEST"
+            }
+        },
+        {
+            "name": "23_SPEED_CLOSED_LOOP_TRACK",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "23_SPEED_CLOSED_LOOP_TRACK",
+                "resourceId": "/23_SPEED_CLOSED_LOOP_TRACK"
+            }
+        },
+        {
+            "name": "24_HC04_TWO_LAP_TX",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "24_HC04_TWO_LAP_TX",
+                "resourceId": "/24_HC04_TWO_LAP_TX"
+            }
+        },
+        {
+            "name": "25_RPI_UART_LINK",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "25_RPI_UART_LINK",
+                "resourceId": "/25_RPI_UART_LINK"
+            }
+        },
+        {
+            "name": "25_stepper_multi",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "25_stepper_multi",
+                "resourceId": "/25_stepper_multi"
+            }
+        },
+        {
+            "name": "26_stepper_multi",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "26_stepper_multi",
+                "resourceId": "/26_stepper_multi"
+            }
+        },
+        {
+            "name": "27_MOS_SWITCH",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "27_MOS_SWITCH",
+                "resourceId": "/27_MOS_SWITCH"
+            }
+        }
+    ]
 }
